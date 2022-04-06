@@ -20,7 +20,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using CityPuzzleAPI.Controllers;
 
-
 namespace CityPuzzleAPI
 {
     public class Startup
@@ -47,6 +46,13 @@ namespace CityPuzzleAPI
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "MiddlewareExamples", Version = "v1" });
             });
             services.AddDbContext<CityPuzzleContext>();
+
+            services.AddCors(options => {
+                options.AddPolicy("AllowMyOrigin",
+                builder => builder.WithOrigins("http://localhost"));
+            });
+
+            services.AddMvc();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -77,7 +83,7 @@ namespace CityPuzzleAPI
 
             //Check how long it takes to process HTTP requests
             app.UseMiddleware<StatisticsMiddleware>();
-
+            app.UseCors("AllowMyOrigin");
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllerRoute(

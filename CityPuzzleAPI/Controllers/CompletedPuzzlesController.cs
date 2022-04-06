@@ -49,9 +49,9 @@ namespace CityPuzzleAPI.Controllers
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<IEnumerable<CompletedPuzzle>>> GetCompletedPuzzles(int id)
+        public ActionResult<int> GetCompletedPuzzles(int id)
         {
-            string sql = "Select CompletedTaskId,UserId,PuzzleId,Score from CompletedPuzzles Where UserID=@UserID";
+            string sql = "Select CompletedTaskId,UserId,PuzzleId,Score from CompletedPuzzles Where PuzzleId=@PuzzleId";
             List<CompletedPuzzle> CompletedPuzzles = new List<CompletedPuzzle>();
             using (SqlConnection conn = new SqlConnection(CityPuzzleContext.ConnectionString))
             {
@@ -59,7 +59,7 @@ namespace CityPuzzleAPI.Controllers
                 SqlDataReader dataReader;
                 conn.Open();
                 command = new SqlCommand(sql, conn);
-                command.Parameters.AddWithValue("@UserID", id);
+                command.Parameters.AddWithValue("@PuzzleId", id);
                 dataReader = command.ExecuteReader();
                 while (dataReader.Read())
                 {
@@ -73,7 +73,7 @@ namespace CityPuzzleAPI.Controllers
                     CompletedPuzzles.Add(temp);
                 }
                 conn.Close();
-                return CompletedPuzzles;
+                return CompletedPuzzles.Count;
             }
         }
         // --------------------------------------------

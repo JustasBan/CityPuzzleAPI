@@ -7,19 +7,25 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using CityPuzzleAPI.Model;
 using CityPuzzleAPI.Aspects;
+using Microsoft.AspNetCore.Hosting;
+using System.IO;
+using Microsoft.AspNetCore.Cors;
 
 namespace CityPuzzleAPI.Controllers
 {
     [Route("api/[controller]")]
+    [EnableCors("AllowMyOrigin")]
     [ApiController]
     [LogAspect]
     public class PuzzlesController : ControllerBase
     {
         private readonly CityPuzzleContext _context;
+        private readonly IWebHostEnvironment _env;
 
-        public PuzzlesController(CityPuzzleContext context)
+        public PuzzlesController(CityPuzzleContext context, IWebHostEnvironment env)
         {
             _context = context;
+            _env = env;
         }
 
         // GET: api/Puzzles
@@ -27,6 +33,26 @@ namespace CityPuzzleAPI.Controllers
         public async Task<ActionResult<IEnumerable<Puzzle>>> GetPuzzles()
         {
             return await _context.Puzzles.ToListAsync();
+        }
+
+        [HttpGet("getfile")]
+        public async Task<ActionResult> GetPuzzleImage(string name)
+        {
+            try
+            {
+                var file = Path.Combine(Directory.GetCurrentDirectory(), "Photos", name);
+                var bytes = await System.IO.File.ReadAllBytesAsync(file);
+
+                return File(bytes, "image/png", Path.GetFileName(file));
+            }
+            catch (Exception)
+            {
+                var file = Path.Combine(Directory.GetCurrentDirectory(), "Photos", "default.png");
+                var bytes = await System.IO.File.ReadAllBytesAsync(file);
+
+                return File(bytes, "image/png", Path.GetFileName(file));
+            }
+            
         }
 
         // GET: api/Puzzles/5
@@ -83,6 +109,31 @@ namespace CityPuzzleAPI.Controllers
             await _context.SaveChangesAsync();
 
             return CreatedAtAction("GetPuzzle", new { id = puzzle.Id }, puzzle);
+        }
+
+        [Route("savefile")]
+        [HttpPost]
+        public JsonResult PostPuzzleImage()
+        {
+            try
+            {
+                var httpReqest = Request.Form;
+                var postedFile = httpReqest.Files[0];
+                string filename = postedFile.FileName;
+                var path = _env.ContentRootPath + "/Photos/" +filename;
+
+                using(var stream =new FileStream(path, FileMode.Create))
+                {
+                    postedFile.CopyTo(stream);
+                }
+
+                return new JsonResult(filename);
+
+            }
+            catch (Exception)
+            {
+                return new JsonResult("default.png");
+            }
         }
 
         // DELETE: api/Puzzles/5
